@@ -1,0 +1,6 @@
+account_id = "560a188b90a4bf11fbd0bd89637b84a9"
+name = "kemu"
+type = "rust"
+route = "brined.fish/kemu/*"
+workers_dev = false
+zone_id = "038837477087d7adec34222b25885162"

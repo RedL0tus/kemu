@@ -1,3 +1,5 @@
+#[macro_use]
+extern crate lazy_static;
 extern crate cfg_if;
 extern crate wasm_bindgen;
 
@@ -19,6 +21,36 @@ cfg_if! {
     }
 }
 
+lazy_static! {
+    static ref DICT_CN_NUM: HashMap<u8, (&'static str, &'static str)> = vec![
+        (0, ("零", "零")),
+        (1, ("一", "壹")),
+        (2, ("二", "贰")),
+        (3, ("三", "叁")),
+        (4, ("四", "肆")),
+        (5, ("五", "伍")),
+        (6, ("六", "陆")),
+        (7, ("七", "柒")),
+        (8, ("八", "捌")),
+        (9, ("九", "玖")),
+    ]
+    .into_iter()
+    .collect();
+    static ref DICT_CN_SEC: HashMap<u8, (&'static str, &'static str)> = vec![
+        (0, ("", "")),
+        (1, ("十", "拾")),
+        (2, ("百", "佰")),
+        (3, ("千", "仟")),
+        (4, ("万", "万")),
+        (5, ("十", "拾")),
+        (6, ("百", "佰")),
+        (7, ("千", "仟")),
+        (8, ("亿", "亿")),
+    ]
+    .into_iter()
+    .collect();
+}
+
 #[allow(dead_code)]
 #[derive(Clone, Copy)]
 enum Dict {
@@ -28,21 +60,7 @@ enum Dict {
 
 impl Dict {
     fn get_num(&self, num: u8) -> &str {
-        let dict_cn_num: HashMap<u8, (&'static str, &'static str)> = vec![
-            (0, ("零", "零")),
-            (1, ("一", "壹")),
-            (2, ("二", "贰")),
-            (3, ("三", "叁")),
-            (4, ("四", "肆")),
-            (5, ("五", "伍")),
-            (6, ("六", "陆")),
-            (7, ("七", "柒")),
-            (8, ("八", "捌")),
-            (9, ("九", "玖")),
-        ]
-        .into_iter()
-        .collect();
-        let temp = dict_cn_num[&num];
+        let temp = DICT_CN_NUM[&num];
         match *self {
             Dict::Normal => temp.0,
             Dict::Capitalized => temp.1,
@@ -50,20 +68,7 @@ impl Dict {
     }
 
     fn get_sec(&self, num: u8) -> &str {
-        let dict_cn_sec: HashMap<u8, (&'static str, &'static str)> = vec![
-            (0, ("", "")),
-            (1, ("十", "拾")),
-            (2, ("百", "佰")),
-            (3, ("千", "仟")),
-            (4, ("万", "万")),
-            (5, ("十", "拾")),
-            (6, ("百", "佰")),
-            (7, ("千", "仟")),
-            (8, ("亿", "亿")),
-        ]
-        .into_iter()
-        .collect();
-        let temp = dict_cn_sec[&num];
+        let temp = DICT_CN_SEC[&num];
         match *self {
             Dict::Normal => temp.0,
             Dict::Capitalized => temp.1,

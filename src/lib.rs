@@ -9,7 +9,6 @@ use cfg_if::cfg_if;
 use wasm_bindgen::prelude::*;
 
 use std::collections::HashMap;
-use std::convert::TryInto;
 
 cfg_if! {
     // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -42,10 +41,7 @@ lazy_static! {
         (2, ("百", "佰")),
         (3, ("千", "仟")),
         (4, ("万", "万")),
-        (5, ("十", "拾")),
-        (6, ("百", "佰")),
-        (7, ("千", "仟")),
-        (8, ("亿", "亿")),
+        (5, ("亿", "亿")),
     ]
     .into_iter()
     .collect();
@@ -90,7 +86,34 @@ fn convert(num: usize, dict: Dict) -> String {
     }
 
     fn parse_section(digits: &[u8], dict: Dict, order: usize) -> String {
-        // Recursion
+        // Recursion for minor sections (tens of thousands section)
+        fn parse_minor_section(digits: &[u8], dict: Dict, minor_order: usize) -> String {
+            // Divide the sections
+            let minor_slice_length = if digits.len() > 4 { 4 } else { digits.len() };
+            let minor_rest = if (digits.len() - minor_slice_length) > 0 { parse_minor_section (&digits[minor_slice_length..], dict, minor_order + minor_slice_length) } else { "".to_owned() };
+
+            // Section suffix
+            let minor_suffix = dict.get_sec(4).repeat(minor_order / 4);
+
+            // Replacing
+            let mut digits_replaced: Vec<String> = (0..minor_slice_length).map(|minor_position| {
+                dict.get_num(digits[minor_position]).to_owned() + if digits[minor_position] != 0 { dict.get_sec(minor_position as u8) } else { "" }
+            }).into_iter().collect();
+            digits_replaced.reverse();
+            let mut combined = digits_replaced.into_iter().collect::<String>();
+
+            // Remove trailing zeros
+            let trailing_zero = dict.get_num(0).to_owned() + dict.get_num(0);
+            while combined.contains(&trailing_zero) {
+                combined = combined.replace(&trailing_zero, dict.get_num(0));
+            }
+            if combined.ends_with(dict.get_num(0)) { combined.pop(); };
+
+            // Return result
+            (minor_rest + &combined + &minor_suffix)
+        }
+
+        // Recursion (hundreds of millions section)
         let slice_length = if digits.len() > 8 { 8 } else { digits.len() };
         let rest = if (digits.len() - slice_length) > 0 {
             parse_section(&digits[slice_length..], dict, order + slice_length)
@@ -99,37 +122,12 @@ fn convert(num: usize, dict: Dict) -> String {
         };
 
         // Get suffix
-        let suffix = dict.get_sec(8).repeat(order / 8);
+        let suffix = dict.get_sec(5).repeat(order / 8);
 
-        // Replacing
-        let mut digits_replaced: Vec<String> = (0..slice_length)
-            .map(|position| {
-                dict.get_num(digits[position]).to_owned()
-                    + if digits[position] != 0 {
-                        dict.get_sec(
-                            position
-                                .try_into()
-                                .expect("You are probably holding it wrong!"),
-                        )
-                    } else {
-                        ""
-                    }
-            })
-            .into_iter()
-            .collect();
-        digits_replaced.reverse();
-        let mut combined = digits_replaced.into_iter().collect::<String>();
+        // Get result for minor sections
+        let minor = parse_minor_section(&digits[..slice_length], dict, 0);
 
-        // Remove trailing zeros
-        let trailing_zero = dict.get_num(0).to_owned() + dict.get_num(0);
-        while combined.contains(&trailing_zero) {
-            combined = combined.replace(&trailing_zero, dict.get_num(0));
-        }
-        if combined.ends_with(dict.get_num(0)) {
-            combined.pop();
-        };
-
-        (rest + &combined + &suffix)
+        (rest + &minor + &suffix)
     }
 
     let digits: Vec<u8> = get_digits(num);

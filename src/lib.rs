@@ -90,15 +90,31 @@ fn convert(num: usize, dict: Dict) -> String {
         fn parse_minor_section(digits: &[u8], dict: Dict, minor_order: usize) -> String {
             // Divide the sections
             let minor_slice_length = if digits.len() > 4 { 4 } else { digits.len() };
-            let minor_rest = if (digits.len() - minor_slice_length) > 0 { parse_minor_section (&digits[minor_slice_length..], dict, minor_order + minor_slice_length) } else { "".to_owned() };
+            let minor_rest = if (digits.len() - minor_slice_length) > 0 {
+                parse_minor_section(
+                    &digits[minor_slice_length..],
+                    dict,
+                    minor_order + minor_slice_length,
+                )
+            } else {
+                "".to_owned()
+            };
 
             // Section suffix
             let minor_suffix = dict.get_sec(4).repeat(minor_order / 4);
 
             // Replacing
-            let mut digits_replaced: Vec<String> = (0..minor_slice_length).map(|minor_position| {
-                dict.get_num(digits[minor_position]).to_owned() + if digits[minor_position] != 0 { dict.get_sec(minor_position as u8) } else { "" }
-            }).into_iter().collect();
+            let mut digits_replaced: Vec<String> = (0..minor_slice_length)
+                .map(|minor_position| {
+                    dict.get_num(digits[minor_position]).to_owned()
+                        + if digits[minor_position] != 0 {
+                            dict.get_sec(minor_position as u8)
+                        } else {
+                            ""
+                        }
+                })
+                .into_iter()
+                .collect();
             digits_replaced.reverse();
             let mut combined = digits_replaced.into_iter().collect::<String>();
 
@@ -107,7 +123,9 @@ fn convert(num: usize, dict: Dict) -> String {
             while combined.contains(&trailing_zero) {
                 combined = combined.replace(&trailing_zero, dict.get_num(0));
             }
-            if combined.ends_with(dict.get_num(0)) { combined.pop(); };
+            if combined.ends_with(dict.get_num(0)) {
+                combined.pop();
+            };
 
             // Return result
             (minor_rest + &combined + &minor_suffix)
